@@ -46,8 +46,8 @@ app.get("/send", (req, res) => {
 
 // Update the send-notification route
 app.post("/send-notification", (req, res) => {
-  const { title, message } = req.body;
-  const payload = JSON.stringify({ title, body: message });
+  const { title, message, taskId } = req.body;
+  const payload = JSON.stringify({ title, body: message, data: { taskId } });
 
   console.log("Sending notifications to", subscriptions.length, "subscribers");
 
