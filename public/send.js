@@ -4,6 +4,7 @@ document
     e.preventDefault();
     const title = document.getElementById("title").value;
     const message = document.getElementById("message").value;
+    const taskId = document.getElementById("taskId").value;
     const resultDiv = document.getElementById("result");
 
     try {
@@ -12,7 +13,7 @@ document
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ title, message }),
+        body: JSON.stringify({ title, message, taskId }),
       });
 
       if (response.ok) {
