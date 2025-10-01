@@ -1,3 +1,5 @@
+const API_BASE = import.meta.env.DEV ? '/api' : import.meta.env.VITE_API_URL;
+
 document
   .getElementById("notificationForm")
   .addEventListener("submit", async (e) => {
@@ -8,7 +10,7 @@ document
     const resultDiv = document.getElementById("result");
 
     try {
-      const response = await fetch(`${API_URL}/send-notification`, {
+      const response = await fetch(`${API_BASE}/send-notification`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

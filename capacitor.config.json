@@ -1,5 +1,9 @@
 {
   "appId": "com.mypushpwa.app",
   "appName": "Push PWA",
-  "webDir": "public"
+  "webDir": "dist",
+  "server": {
+    "url": "https://your-pwa-url.com",
+    "cleartext": false
+  }
 }
