@@ -4,6 +4,13 @@ const webpush = require("web-push");
 const bodyParser = require("body-parser");
 const path = require("path");
 const cors = require("cors");
+const low = require("lowdb");
+const FileSync = require("lowdb/adapters/FileSync");
+
+const adapter = new FileSync("db.json");
+const db = low(adapter);
+
+db.defaults({ subscriptions: [] }).write();
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -22,16 +29,25 @@ webpush.setVapidDetails(
   privateVapidKey,
 );
 
-// Initialize subscriptions array
-let subscriptions = [];
-
 app.post("/subscribe", (req, res) => {
   const subscription = req.body;
-  subscriptions.push(subscription);
+  db.get("subscriptions").push(subscription).write();
   res.status(201).json({});
   console.log(
     "New subscription added. Total subscriptions:",
-    subscriptions.length,
+    db.get("subscriptions").size().value(),
+  );
+});
+
+app.post("/unsubscribe", (req, res) => {
+  const subscription_to_delete = req.body;
+  db.get("subscriptions")
+    .remove({ endpoint: subscription_to_delete.endpoint })
+    .write();
+  res.status(200).json({});
+  console.log(
+    "Subscription removed. Total subscriptions:",
+    db.get("subscriptions").size().value(),
   );
 });
 
@@ -39,21 +55,30 @@ app.get("/vapidPublicKey", (req, res) => {
   res.json({ publicKey: process.env.PUBLIC_VAPID_KEY });
 });
 
-// Serve the send page
 app.get("/send", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "send.html"));
 });
 
-// Update the send-notification route
 app.post("/send-notification", (req, res) => {
   const { title, message, taskId } = req.body;
   const payload = JSON.stringify({ title, body: message, data: { taskId } });
+  const subscriptions = db.get("subscriptions").value();
 
   console.log("Sending notifications to", subscriptions.length, "subscribers");
 
   Promise.all(
     subscriptions.map((subscription) =>
-      webpush.sendNotification(subscription, payload),
+      webpush.sendNotification(subscription, payload).catch((err) => {
+        if (err.statusCode === 410) {
+          console.log("Subscription has expired or is no longer valid: ", err);
+          return db
+            .get("subscriptions")
+            .remove({ endpoint: subscription.endpoint })
+            .write();
+        } else {
+          console.error("Error sending notification:", err);
+        }
+      }),
     ),
   )
     .then(() => {

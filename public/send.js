@@ -8,7 +8,7 @@ document
     const resultDiv = document.getElementById("result");
 
     try {
-      const response = await fetch("/send-notification", {
+      const response = await fetch(`${API_URL}/send-notification`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

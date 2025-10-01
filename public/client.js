@@ -19,7 +19,7 @@ async function subscribeToNotifications() {
       const registration = await navigator.serviceWorker.register("/sw.js");
       console.log("Service Worker registered");
 
-      const response = await fetch("/vapidPublicKey");
+      const response = await fetch(`${API_URL}/vapidPublicKey`);
       const vapidPublicKey = await response.json();
 
       const subscription = await registration.pushManager.subscribe({
@@ -27,7 +27,7 @@ async function subscribeToNotifications() {
         applicationServerKey: urlBase64ToUint8Array(vapidPublicKey.publicKey),
       });
 
-      await fetch("/subscribe", {
+      await fetch(`${API_URL}/subscribe`, {
         method: "POST",
         body: JSON.stringify(subscription),
         headers: {
@@ -45,4 +45,28 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/sw.js");
   });
+}
+
+async function unsubscribeFromNotifications() {
+  if ("serviceWorker" in navigator) {
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (subscription) {
+        await subscription.unsubscribe();
+        await fetch(`${API_URL}/unsubscribe`, {
+          method: "POST",
+          body: JSON.stringify(subscription),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        console.log("Push notification unsubscription successful");
+      } else {
+        console.log("No push subscription to unsubscribe");
+      }
+    } catch (err) {
+      console.error("Error unsubscribing from push notifications:", err);
+    }
+  }
 }
